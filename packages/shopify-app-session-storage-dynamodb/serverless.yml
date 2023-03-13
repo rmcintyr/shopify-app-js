@@ -1,0 +1,68 @@
+app: shopify-app-session-storage-dynamodb
+service: shopify-app-session-storage-dynamodb
+
+frameworkVersion: '3'
+
+useDotenv: true
+
+plugins:
+  - serverless-dynamodb-local
+  - serverless-offline
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'us-east-1'}
+  versionFunctions: false
+  apiGateway:
+    shouldStartNameWithService: true
+
+	
+custom:
+  dynamodb:
+  # If you only want to use DynamoDB Local in some stages, declare them here
+    stages:
+      - dev
+    start:
+      port: 8000
+      inMemory: true
+      heapInitial: 200m
+      heapMax: 1g
+      migrate: true
+      seed: true
+      convertEmptyValues: true
+
+resources:
+  Resources:
+    usersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ShopifySessions
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: shop
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+        # ProvisionedThroughput:
+        #   ReadCapacityUnits: 1
+        #   WriteCapacityUnits: 1
+        GlobalSecondaryIndexes: 
+        - 
+          IndexName: "shop-index"
+          KeySchema: 
+            - 
+              AttributeName: "shop"
+              KeyType: "HASH"
+          Projection: 
+            NonKeyAttributes: 
+              - "Album"
+            ProjectionType: "ALL"
+          BillingMode: PAY_PER_REQUEST
+          # ProvisionedThroughput: 
+          #   ReadCapacityUnits: "5"
+          #   WriteCapacityUnits: "5"
